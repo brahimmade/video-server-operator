@@ -1,3 +1,6 @@
+from datetime import datetime
+
+
 def _prepare_log(log_type: str, message: []) -> str:
     log_types = {
         'warn': "\033[33mWARN",
@@ -5,7 +8,7 @@ def _prepare_log(log_type: str, message: []) -> str:
         'info': "\033[35mINFO",
         'success': "\033[36mSUCC",
     }
-    return f"{log_types[log_type]} > \033[37m{message}"
+    return f"\033[38m{datetime.now().strftime('%d-%m-%Y %H:%M:%S')} | {log_types[log_type]} > \033[37m{message}"
 
 
 def log_warn(message: []) -> None:
@@ -32,7 +35,7 @@ class Log:
 
     def _log_in_file(self, type_log: str, message: []) -> None:
         if self.file_log:
-            with open(self.file_log_path + self.file_log_name + '.log', 'a') as log_file:
+            with open(self.file_log_path + self.file_log_name + '.log', 'a', encoding="utf-8") as log_file:
                 log_file.write(f"{type_log} > {message}\n")
 
     def warn(self, message: [], log_file: bool = True) -> None:
