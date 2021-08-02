@@ -4,7 +4,9 @@ attrs==21.2.0
 chardet==4.0.0
 idna==3.2
 multidict==5.1.0
+pathlib==1.0.1
 peewee==3.14.4
+PyMySQL==1.0.2
 python-dotenv==0.19.0
 typing-extensions==3.10.0.0
 watchdog==2.1.3
