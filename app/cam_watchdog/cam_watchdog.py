@@ -6,9 +6,7 @@ from time import sleep
 
 
 class CamWatchdog:
-    """
-    Класс для слежения за состоянием директорий видео-серверов
-    """
+    """Класс для слежения за состоянием директорий видео-серверов """
     def __init__(self, cam_servers: list):
         self.cam_servers = cam_servers
         self.cam_observer = Observer()
@@ -33,10 +31,7 @@ class CamWatchdog:
             self.catch_all_handler(event)
 
     def start(self) -> None:
-        """
-        Запуск слежения за серверами
-        :return:
-        """
+        """Запуск слежения за серверами"""
         self.cam_observer.start()
         while True:
             sleep(1)

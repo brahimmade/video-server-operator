@@ -1,11 +1,13 @@
-from app.utils.fpylog import Log
+from pathlib import Path
+from sys import path as sys_path
+from dotenv import load_dotenv
+from app.setting import DOT_ENV_PATH
 
-log = Log(file_log=False)
 
-
-def exit_with_error_message(message: str) -> None:
+def load_env_file() -> None:
     """
-    Завершает программу с сообщением об ошибке
+    Загружает данные из файла с виртуальным окружением, если данный файл невозможно прочитать, то скрипт завершается
+    Returns:
+        None:
     """
-    log.error(message)
-    exit()
+    load_dotenv(DOT_ENV_PATH)
