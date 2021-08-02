@@ -8,7 +8,7 @@ __pycache__/
 *.so
 
 # User
-*.env
+config.env
 test/
 
 # Distribution / packaging
