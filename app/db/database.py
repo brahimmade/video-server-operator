@@ -63,7 +63,7 @@ class Database:
         else:
             log.success("Таблицы БД в порядке", log_file=False)
 
-    def init(self) -> bool:
+    async def init(self) -> bool:
         """
         Инициализирует базу данных
         Returns:
