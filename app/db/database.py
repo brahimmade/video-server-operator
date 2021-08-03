@@ -56,7 +56,7 @@ class Database:
 
             try:
                 self.db.create_tables(missing_tables)
-                log.success("Таблицы успешно созданны")
+                log.success("Таблицы успешно созданы")
             except OperationalError as dbErr:
                 log.error(dbErr)
 
