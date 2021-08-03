@@ -1,7 +1,7 @@
-from watchdog.events import FileSystemEventHandler, FileMovedEvent
+from watchdog.events import FileSystemEventHandler, FileMovedEvent, DirCreatedEvent, FileCreatedEvent
 from watchdog.observers import Observer
 from app.utils.fpylog import Log
-from .file_logic import CamVideoPath
+from .file_logic import split_path
 from asyncio import sleep as async_sleep
 
 
@@ -19,19 +19,35 @@ class CamWatchdog:
             self.cam_observer.schedule(self.CamDirectoryHandling(), server, recursive=True)
 
     class CamDirectoryHandling(FileSystemEventHandler):
-        def catch_all_handler(self, event):
-            print(event)
+        """
+        Наследуется от FileSystemEventHandler
+        Обработчик ивентов изменений в директориях и файлах
+        """
 
-        def on_moved(self, event):
-            if isinstance(event, FileMovedEvent):
-                video = CamVideoPath(path_video=event.dest_path.replace('\\', '/'))
+        def catch_all_handler(self, event):
+            pass
+
+        def on_moved(self, event) -> None:
+            if isinstance(event, FileMovedEvent):  # Если событие - перемещение файла, а не директории
                 try:
-                    video.split_for_tables()
+                    video_split_dir = split_path(event.dest_path)
+                    print(video_split_dir)
                 except ValueError as wdErr:
                     log.error(wdErr)
 
         def on_created(self, event):
-            self.catch_all_handler(event)
+            if isinstance(event, DirCreatedEvent):  # Если событие - создание новой папки
+                try:
+                    video_split_dir = split_path(event.src_path)
+                    print(video_split_dir)
+                except ValueError as wdErr:
+                    log.error(wdErr)
+            elif isinstance(event, FileCreatedEvent):  # Если событие - создание нового файла
+                try:
+                    video_split_dir = split_path(event.src_path)
+                    print(video_split_dir)
+                except ValueError as wdErr:
+                    log.error(wdErr)
 
         def on_deleted(self, event):
             self.catch_all_handler(event)

@@ -10,6 +10,7 @@ __pycache__/
 # User
 config.env
 test/
+logs/
 
 # Distribution / packaging
 .Python
