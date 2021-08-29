@@ -1,8 +1,8 @@
 from aiohttp import web
-from app.utils.fpylog import Log
+from app.logger import get_logger
 import asyncio
 
-log = Log(file_log=True, file_log_name="api")
+log = get_logger(__name__)
 
 
 class Api:
@@ -34,7 +34,7 @@ class Api:
         await runner.setup()
         site = web.TCPSite(runner, host, port)
         await site.start()
-        log.success(f"Запущен сервер {host}:{port}", log_file=False)
+        log.info(f"Запущен сервер {host}:{port}")
 
     async def start(self):
         api_server = web.Application()
