@@ -1,11 +1,11 @@
 from watchdog.events import FileSystemEventHandler, FileMovedEvent, DirCreatedEvent, FileCreatedEvent
 from watchdog.observers import Observer
-from app.utils.fpylog import Log
 from .file_logic import split_path
 from asyncio import sleep as async_sleep
+from app.logger import get_logger
+from app.database import video_server
 
-
-log = Log(file_log=True, file_log_name='watchdog')
+log = get_logger(__name__)
 
 
 class CamWatchdog:
@@ -31,23 +31,26 @@ class CamWatchdog:
             if isinstance(event, FileMovedEvent):  # Если событие - перемещение файла, а не директории
                 try:
                     video_split_dir = split_path(event.dest_path)
-                    print(video_split_dir)
-                except ValueError as wdErr:
-                    log.error(wdErr)
+                except ValueError as err:
+                    log.error(err)
 
         def on_created(self, event):
-            if isinstance(event, DirCreatedEvent):  # Если событие - создание новой папки
+            # Если событие - создание новой папки
+            if isinstance(event, DirCreatedEvent):
                 try:
                     video_split_dir = split_path(event.src_path)
-                    print(video_split_dir)
-                except ValueError as wdErr:
-                    log.error(wdErr)
-            elif isinstance(event, FileCreatedEvent):  # Если событие - создание нового файла
+                    server_model = video_server.get_server_by_dir(video_split_dir.get('server'))
+                    video_server.set_new_camera(camera_dir=video_split_dir.get('cam'), server=server_model)
+
+                except ValueError as err:
+                    log.error(err)
+
+            # Если событие - создание нового файла
+            elif isinstance(event, FileCreatedEvent):
                 try:
                     video_split_dir = split_path(event.src_path)
-                    print(video_split_dir)
-                except ValueError as wdErr:
-                    log.error(wdErr)
+                except ValueError as err:
+                    log.error(err)
 
         def on_deleted(self, event):
             self.catch_all_handler(event)
@@ -58,6 +61,6 @@ class CamWatchdog:
     async def start(self) -> None:
         """Запуск слежения за серверами"""
         self.cam_observer.start()
-        log.success(f"Запущен watchdog за директориями {self.cam_servers}", log_file=False)
+        log.info(f"Запущен watchdog за директориями {self.cam_servers}")
         while True:
             await async_sleep(0.01)
