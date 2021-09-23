@@ -1,32 +1,34 @@
 import logging
-from os import environ
-
-_log_format = f"%(asctime)s [%(levelname)s] - %(name)s | %(message)s"
-_log_level = environ.get("LOGGING_LEVEL", "WARNING").upper()
+from pathlib import Path
 
 
-def get_logger(name: str) -> logging.Logger:
+def get_logger(name: str, log_level: str = 'INFO') -> logging.Logger:
     """
     Получить сконфигурированный логгер
     Args:
         name (str): Название модуля
+        log_level (str): Уровень лога
 
     Returns:
         logging.Logger: Сконфигурированный экземпляр логгера
     """
-
+    log_format = f"%(asctime)s [%(levelname)s] - %(name)s | %(message)s"
     stream_handler = logging.StreamHandler()
-    stream_handler.setLevel(_log_level)
-    stream_handler.setFormatter(logging.Formatter(_log_format))
+    stream_handler.setLevel(log_level)
+    stream_handler.setFormatter(logging.Formatter(log_format))
+
+    log_file = Path('logs', 'vso.log')
+    if not log_file.exists():
+        log_file.touch()
 
     file_handler = logging.FileHandler(
-        filename=environ.get("LOGGING_PATH", 'ufir.log'),
+        filename=log_file,
         encoding='utf-8')
-    file_handler.setLevel(_log_level)
-    file_handler.setFormatter(logging.Formatter(_log_format))
+    file_handler.setLevel(log_level)
+    file_handler.setFormatter(logging.Formatter(log_format))
 
     logger = logging.getLogger(name)
-    logger.setLevel(_log_level)
+    logger.setLevel(log_level)
     logger.addHandler(stream_handler)
     logger.addHandler(file_handler)
 
