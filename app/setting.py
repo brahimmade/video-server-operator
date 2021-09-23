@@ -1,5 +1,4 @@
-from pathlib import Path
-from sys import path as sys_path
+from os import environ
 
-_env_path = Path(sys_path[0], 'config.env')
-DOT_ENV_PATH = _env_path if _env_path.exists() else exit()
+MYSQL_URL = f"mysql+pymysql://{environ.get('DB_USER')}:{environ.get('DB_PASSWORD')}@" \
+            f"{environ.get('DB_HOST')}/{environ.get('DB_NAME')}"
