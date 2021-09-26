@@ -1,10 +1,13 @@
 from datetime import datetime
 from functools import total_ordering
 
+from pathlib import Path
 from sqlalchemy.sql import sqltypes, schema
+from sqlalchemy.exc import SQLAlchemyError
 
 from app.database import BASE, SESSION
 from app.database.utils.decorators import with_insertion_lock
+from app.database.utils.filters import leave_required_keys
 from app.logger import get_logger
 
 log = get_logger(__name__)
@@ -16,6 +19,9 @@ class Video(BASE):
     __tablename__ = 'video'
     id = schema.Column(sqltypes.Integer, primary_key=True)
     name = schema.Column(sqltypes.String(256), nullable=False)
+    video_path_id = schema.Column(sqltypes.Integer,
+                                  schema.ForeignKey('video_path.id', ondelete='CASCADE', onupdate='CASCADE'),
+                                  nullable=False)
     time = schema.Column(sqltypes.Time(timezone=True), nullable=False)
     extension = schema.Column(sqltypes.String(6), nullable=False)
     duration = schema.Column(sqltypes.Integer, nullable=False)
@@ -60,9 +66,7 @@ class VideoPath(BASE):
     camera_id = schema.Column(sqltypes.Integer,
                               schema.ForeignKey('camera.id', ondelete='CASCADE', onupdate='CASCADE'),
                               nullable=False)
-    video_id = schema.Column(sqltypes.Integer,
-                             schema.ForeignKey('video.id', ondelete='CASCADE', onupdate='CASCADE'),
-                             nullable=False)
+    video_path = schema.Column(sqltypes.String(256), nullable=False)
     record_date = schema.Column(sqltypes.Date, nullable=False)
 
     def __repr__(self):
@@ -100,12 +104,12 @@ def init_tables():
     """Инициализация таблиц в базе данных"""
     VideoServer.__table__.create(checkfirst=True)
     Camera.__table__.create(checkfirst=True)
-    Video.__table__.create(checkfirst=True)
     VideoPath.__table__.create(checkfirst=True)
+    Video.__table__.create(checkfirst=True)
 
 
 @with_insertion_lock
-def set_new_server(server_dir: str) -> VideoServer:
+def set_or_get_new_server(server_dir: str) -> VideoServer:
     """
     Создает новую запись с сервером
     Args:
@@ -114,6 +118,9 @@ def set_new_server(server_dir: str) -> VideoServer:
     Returns:
         VideoServer: Модель с данными видео сервера
     """
+    if server_dir is None:
+        raise ValueError("Сервер не может быть NoneType")
+
     video_server = SESSION.query(VideoServer).filter_by(server_dir=server_dir).limit(1).scalar()
     if not video_server:
         video_server = VideoServer(
@@ -121,14 +128,19 @@ def set_new_server(server_dir: str) -> VideoServer:
             server_dir=server_dir)
 
         SESSION.add(video_server)
-        SESSION.commit()
+        try:
+            SESSION.commit()
+        except SQLAlchemyError as err:
+            SESSION.rollback()
+            raise ValueError from err
+        finally:
+            SESSION.close()
 
-    SESSION.close()
     return video_server
 
 
 @with_insertion_lock
-def set_new_camera(camera_dir: str, server: VideoServer) -> Camera:
+def set_or_get_new_camera(camera_dir: str, server: VideoServer) -> Camera:
     """
     Добавляет новую камеру в базу данных
     Args:
@@ -153,13 +165,15 @@ def set_new_camera(camera_dir: str, server: VideoServer) -> Camera:
     return camera
 
 
-def set_new_video(**kwargs) -> Video:
+@with_insertion_lock
+def set_or_get_new_video(**kwargs) -> Video:
     """
     Добавляет новое видео в базу данных
     Args:
         **kwargs: Аргументы с данными о видео
     Keyword Args:
         name (str): Название видео
+        video_path_id (id): ID записи video_path для этой камеры
         time (str): Временая метка, с которого идет запись
         extension (str): Расширение видео файла
         duration (int): Длина видеоряда
@@ -174,8 +188,9 @@ def set_new_video(**kwargs) -> Video:
         KeyError: Если были переданны не все необходимые поля
     """
     # Удаляем неуказанные kwargs
-    required_fields = ['name', 'time', 'extension', 'duration', 'bitrate', 'stream_count', 'codec_main', 'codec_sub']
-    filtered_kwargs = {arg: value for arg, value in kwargs.items() if arg in required_fields}
+    required_fields = Video.__table__.columns.keys()
+    filtered_kwargs = leave_required_keys(kwargs, required_fields)
+    required_fields.remove('id')  # Убираем поле id из требуемых, так как оно авто-инкриминирующее
     required_fields.remove('codec_sub')  # Убираем поле codec_sub из требуемых, так как оно не обязательно
     # Проверка того, что все необходимые поля переданы
     if set(required_fields) - set(filtered_kwargs):
@@ -196,48 +211,84 @@ def set_new_video(**kwargs) -> Video:
 
 
 @with_insertion_lock
-def set_new_video_path(camera: Camera, video: Video, datestamp: datetime) -> Camera:
+def set_or_get_new_video_path(camera: Camera, video_path: [str, Path], datestamp: datetime) -> Camera:
     """
     Добавляет новую камеру в базу данных
     Args:
         camera (Camera): Модель таблицы Камеры, для которой указывается путь до видео
-        video (Video): Модель таблицы Видео, для которой указывается путь до видео
+        video_path (str | Path): Путь до видео
         datestamp (datetime): Дата, когда было записано видео
 
     Returns:
         Camera: Модель с данными камеры
     """
-    video_path = SESSION.query(VideoPath).filter_by(
+    set_video_path = SESSION.query(VideoPath).filter_by(
         camera_id=camera.id,
-        video_id=video.id,
+        video_path=video_path,
         record_date=datestamp).limit(1).scalar()
 
-    if not video_path:
-        video_path = VideoPath(
+    if not set_video_path:
+        set_video_path = VideoPath(
             camera_id=camera.id,
-            video_id=video.id
+            video_path=video_path,
+            record_date=datestamp
         )
-        SESSION.add(video_path)
+        SESSION.add(set_video_path)
         SESSION.commit()
 
     SESSION.close()
-    return video_path
+    return set_video_path
 
 
-def get_server_by_dir(server_dir: str) -> [VideoServer, None]:
+def get_server(**kwargs) -> [VideoServer, None]:
     """
-    Получить модель видео сервера по заданному пути
+    Получить модель видео сервера по заданным параметрам
     Args:
-        server_dir (str): Путь до сервера
+        **kwargs: Данные модели сервера
+
+    Keyword Args:
+        id (int): ID записи в таблице
+        server_name (str): Название сервера
+        server_dir (str | Path): Путь до сервера
 
     Returns:
         VideoServer: Модель с данными о сервере
-        None: Если по переданному адресу не было найдено сервера
+        None: Если по переданным параметрам не было найдено сервера
     """
-    video_server = SESSION.query(VideoServer).filter_by(server_dir=server_dir).limit(1).scalar()
+    filtered_fields = leave_required_keys(kwargs, VideoServer.__table__.columns.keys())
 
+    if 'server_dir' in filtered_fields.keys():
+        filtered_fields['server_dir'] = str(filtered_fields.get('server_dir')).replace("\\", '/')
+
+    video_server = SESSION.query(VideoServer).filter_by(**filtered_fields).limit(1).scalar()
     SESSION.close()
     return video_server
+
+
+def get_camera(**kwargs) -> [Camera, None]:
+    """
+    Получить модель камеры по заданным параметрам
+    Args:
+        **kwargs: Данные модели камеры
+
+    Keyword Args:
+        id (int): ID записи в таблице
+        server_id (int): ID сервера, к которому привязанна камера
+        camera_name (str): Название камеры
+        camera_dir (str | Path): Путь до камеры
+
+    Returns:
+        Camera: Модель с данными о камере
+        None: Если по переданным параметрам не было найдено камер
+    """
+    filtered_fields = leave_required_keys(kwargs, Camera.__table__.columns.keys())
+
+    if 'camera_dir' in filtered_fields.keys():
+        filtered_fields['camera_dir'] = str(filtered_fields.get('camera_dir')).replace("\\", '/')
+
+    camera = SESSION.query(Camera).filter_by(**filtered_fields).limit(1).scalar()
+    SESSION.close()
+    return camera
 
 
 if __name__ != '__main__':

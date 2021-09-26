@@ -3,7 +3,7 @@ from datetime import datetime
 from app.database import BASE, video_server
 
 
-@pytest.fixture(name="preload_db", scope="session")
+@pytest.fixture(scope="session")
 def preload_database():
     """Предзагрузка базы данных, очистка, инициализация таблиц"""
     BASE.metadata.drop_all()
@@ -11,26 +11,52 @@ def preload_database():
     yield
 
 
-def test_set_video_server(preload_db):
+def test_set_video_server(preload_database):
     server_path = '/dev/archive/test_server'
 
-    set_video_server = video_server.set_new_server(server_dir=server_path)
+    set_video_server = video_server.set_or_get_new_server(server_dir=server_path)
 
     assert isinstance(set_video_server, video_server.VideoServer)
 
 
-def test_set_cam(preload_db):
-    cam_path = 'cam1'
-    set_video_server = video_server.set_new_server('/dev/archive/test_server')
+@pytest.mark.parametrize('invalid_server', [None, 'long' * 65])
+def test_set_invalid_video_server(preload_database, invalid_server):
+    with pytest.raises(ValueError):
+        video_server.set_or_get_new_server(invalid_server)
 
-    set_cam = video_server.set_new_camera(camera_dir=cam_path, server=set_video_server)
+
+def test_set_cam(preload_database):
+    cam_path = 'cam1'
+    set_video_server = video_server.set_or_get_new_server('/dev/archive/test_server')
+
+    set_cam = video_server.set_or_get_new_camera(camera_dir=cam_path, server=set_video_server)
 
     assert isinstance(set_cam, video_server.Camera)
 
 
-def test_set_video(preload_db):
+def test_set_video_path(preload_database):
+    set_video_server = video_server.set_or_get_new_server('/dev/archive/test_server')
+    set_cam = video_server.set_or_get_new_camera(camera_dir='cam1', server=set_video_server)
+    video_path = "03-06-2020/62241721"
+    time_stamp = datetime.strptime('03-06-2020', "%d-%m-%Y")
+
+    set_video_path = video_server.set_or_get_new_video_path(camera=set_cam,
+                                                            video_path=video_path,
+                                                            datestamp=time_stamp)
+
+    assert isinstance(set_video_path, video_server.VideoPath)
+
+
+def test_set_video(preload_database):
+    set_video_server = video_server.set_or_get_new_server('/dev/archive/test_server')
+    set_cam = video_server.set_or_get_new_camera(camera_dir='cam1', server=set_video_server)
+    set_video_path = video_server.set_or_get_new_video_path(camera=set_cam,
+                                                            video_path="03-06-2020/62241721",
+                                                            datestamp=datetime.strptime('03-06-2020', "%d-%m-%Y"))
+
     video_data = {
         'name': "test_video",
+        'video_path_id': set_video_path.id,
         'time': datetime.now().strftime('%H:%M:%S'),
         'extension': 'mp4',
         'duration': 10 * 60 * 60,
@@ -40,12 +66,12 @@ def test_set_video(preload_db):
         'codec_sub': 'h264'
     }
 
-    set_video = video_server.set_new_video(**video_data)
+    set_video = video_server.set_or_get_new_video(**video_data)
 
     assert isinstance(set_video, video_server.Video)
 
 
-def test_set_incomplete_video(preload_db):
+def test_set_incomplete_video(preload_database):
     video_data = {
         'name': "test_video_a",
         'time': datetime.now().strftime('%H:%M:%S'),
@@ -53,13 +79,13 @@ def test_set_incomplete_video(preload_db):
         'codec_main': 'h264',
     }
     with pytest.raises(KeyError):
-        video_server.set_new_video(**video_data)
+        video_server.set_or_get_new_video(**video_data)
 
 
-def test_get_video_server(preload_db):
+def test_get_video_server(preload_database):
     server_path = '/dev/archive/test_server'
-    set_video_server = video_server.set_new_server(server_dir=server_path)
+    set_video_server = video_server.set_or_get_new_server(server_dir=server_path)
 
-    get_video_server = video_server.get_server_by_dir(server_dir=server_path)
+    get_video_server = video_server.get_server(server_dir=server_path)
 
     assert set_video_server == get_video_server
