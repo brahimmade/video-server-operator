@@ -12,12 +12,16 @@ def get_logger(name: str, log_level: str = 'INFO') -> logging.Logger:
     Returns:
         logging.Logger: Сконфигурированный экземпляр логгера
     """
-    log_format = f"%(asctime)s [%(levelname)s] - %(name)s | %(message)s"
+    log_format = "%(asctime)s [%(levelname)s] - %(name)s | %(message)s"
     stream_handler = logging.StreamHandler()
     stream_handler.setLevel(log_level)
     stream_handler.setFormatter(logging.Formatter(log_format))
 
-    log_file = Path('logs', 'vso.log')
+    log_path = Path('logs')
+    if not log_path.exists():
+        log_path.mkdir(parents=True)
+
+    log_file = Path(log_path, 'vso.log')
     if not log_file.exists():
         log_file.touch()
 
