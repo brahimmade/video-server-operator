@@ -1,14 +1,7 @@
 import pytest
 from datetime import datetime
-from app.database import BASE, video_server
-
-
-@pytest.fixture(scope="session")
-def preload_database():
-    """Предзагрузка базы данных, очистка, инициализация таблиц"""
-    BASE.metadata.drop_all()
-    video_server.init_tables()
-    yield
+from app.database import video_server
+from tests.common_fixtures import preload_database
 
 
 def test_set_video_server(preload_database):
@@ -89,3 +82,13 @@ def test_get_video_server(preload_database):
     get_video_server = video_server.get_server(server_dir=server_path)
 
     assert set_video_server == get_video_server
+
+
+def test_get_camera(preload_database):
+    server = video_server.set_or_get_new_server(server_dir='/dev/archive/test_server')
+    camera_dir = 'cam99'
+    set_camera = video_server.set_or_get_new_camera(server=server, camera_dir=camera_dir)
+
+    get_camera = video_server.get_camera(camera_dir=camera_dir)
+
+    assert set_camera == get_camera

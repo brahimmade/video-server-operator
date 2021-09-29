@@ -18,7 +18,7 @@ def create_session() -> scoped_session:
 
     BASE.metadata.bind = engine
     BASE.metadata.create_all(engine)
-    return scoped_session(sessionmaker(bind=BASE.metadata.bind, autoflush=False))
+    return scoped_session(sessionmaker(bind=BASE.metadata.bind, autoflush=False, expire_on_commit=False))
 
 
 BASE = declarative_base()

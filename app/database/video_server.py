@@ -135,7 +135,7 @@ def set_or_get_new_server(server_dir: str) -> VideoServer:
             raise ValueError from err
         finally:
             SESSION.close()
-
+    SESSION.close()
     return video_server
 
 
@@ -289,6 +289,60 @@ def get_camera(**kwargs) -> [Camera, None]:
     camera = SESSION.query(Camera).filter_by(**filtered_fields).limit(1).scalar()
     SESSION.close()
     return camera
+
+
+def get_video_path(**kwargs) -> [VideoPath, None]:
+    """
+    Получить модель пути до видео по заданным параметрам
+    Args:
+        **kwargs: Данные модели пути видео
+
+    Keyword Args:
+        id (int): ID записи в таблице
+        camera_id (int): ID камеры, к которой привязан путь
+        video_path (str | Path): Путь до видео
+        record_date (str | datetime): Дата записи видео
+
+    Returns:
+        VideoPath: Модель с данными пути до видео
+        None: Если по переданным параметрам не было найдено пути до видео
+    """
+    filtered_fields = leave_required_keys(kwargs, VideoPath.__table__.columns.keys())
+
+    if 'video_path' in filtered_fields.keys():
+        filtered_fields['video_path'] = str(filtered_fields.get('video_path')).replace("\\", '/')
+
+    video_path = SESSION.query(VideoPath).filter_by(**filtered_fields).limit(1).scalar()
+    SESSION.close()
+    return video_path
+
+
+def get_video(**kwargs) -> [Video, None]:
+    """
+    Получить модель видео по заданным параметрам
+    Args:
+        **kwargs: Аргументы с данными о видео
+    Keyword Args:
+        id (int): ID записи в таблице
+        name (str): Название видео
+        video_path_id (id): ID записи video_path для этой камеры
+        time (str): Временая метка, с которого идет запись
+        extension (str): Расширение видео файла
+        duration (int): Длина видеоряда
+        bitrate (int): Битрейт видеоряда
+        stream_count (int): Количество потоков
+        codec_main (str): Кодек главного потока
+        codec_sub (str): Кодек второго потока
+
+    Returns:
+        Video: Модель с данными видео
+        None: Если по переданным параметрам не было найдено видео
+    """
+    filtered_fields = leave_required_keys(kwargs, Video.__table__.columns.keys())
+
+    video = SESSION.query(Video).filter_by(**filtered_fields).limit(1).scalar()
+    SESSION.close()
+    return video
 
 
 if __name__ != '__main__':
