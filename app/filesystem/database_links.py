@@ -1,7 +1,7 @@
 import pathlib
 
 from app.database import video_server
-from app.filesystem import file_logic
+from app.filesystem import path
 
 
 def set_full_path(video_path: [str, pathlib.Path]) -> None:
@@ -13,9 +13,9 @@ def set_full_path(video_path: [str, pathlib.Path]) -> None:
         ValueError: Ошибка возникает, если переданный путь оказался некорректным
     """
     try:
-        parsed_path = file_logic.split_path(video_path)
+        parsed_path = path.split_path(video_path)
 
-        video_datestamp = file_logic.find_datestamp(parsed_path.get('video_path'))
+        video_datestamp = path.find_datestamp(parsed_path.get('video_path'))
         # Проверка, если поиск даты вернул None
         if video_datestamp is None:
             raise ValueError("В переданном пути video_path не была найдена дата")

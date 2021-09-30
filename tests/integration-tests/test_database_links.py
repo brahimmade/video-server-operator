@@ -3,13 +3,13 @@ import pytest
 from tests.common_fixtures import preload_database
 
 from app.filesystem import database_links
-from app.filesystem import file_logic
+from app.filesystem import path
 from app.database import video_server
 
 
 def test_link_full_path(preload_database):
     payload_path = '/mnt/archive/test_server/cam-101/2023-08-02/6580711/6580711-video.mp4'
-    split_path = file_logic.split_path(payload_path)
+    split_path = path.split_path(payload_path)
 
     database_links.set_full_path(video_path=payload_path)
 

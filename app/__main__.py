@@ -1,8 +1,10 @@
 from ast import literal_eval
 from os import environ
+
+from asyncio import get_event_loop
+
 from app.filesystem import Watchdog
 from app.web.api import Api
-from asyncio import get_event_loop
 
 
 def run() -> None:
