@@ -26,9 +26,7 @@ class Video(BASE):
     extension = schema.Column(sqltypes.String(6), nullable=False)
     duration = schema.Column(sqltypes.Integer, nullable=False)
     bitrate = schema.Column(sqltypes.Integer, nullable=False)
-    stream_count = schema.Column(sqltypes.Integer, nullable=False)
-    codec_main = schema.Column(sqltypes.String(10), nullable=False)
-    codec_sub = schema.Column(sqltypes.String(10), nullable=True)
+    codec = schema.Column(sqltypes.String(10), nullable=False)
 
     def __repr__(self):
         return f"{self.id} | {self.name}.{self.extension} at {self.time} duration: {self.duration}"
@@ -178,9 +176,7 @@ def set_or_get_new_video(**kwargs) -> Video:
         extension (str): Расширение видео файла
         duration (int): Длина видеоряда
         bitrate (int): Битрейт видеоряда
-        stream_count (int): Количество потоков
-        codec_main (str): Кодек главного потока
-        codec_sub (str): Кодек второго потока
+        codec (str): Кодек потока
     Returns:
         Camera: Модель с данными видео
 
@@ -191,14 +187,9 @@ def set_or_get_new_video(**kwargs) -> Video:
     required_fields = Video.__table__.columns.keys()
     filtered_kwargs = leave_required_keys(kwargs, required_fields)
     required_fields.remove('id')  # Убираем поле id из требуемых, так как оно авто-инкриминирующее
-    required_fields.remove('codec_sub')  # Убираем поле codec_sub из требуемых, так как оно не обязательно
     # Проверка того, что все необходимые поля переданы
     if set(required_fields) - set(filtered_kwargs):
         raise KeyError('Не были переданы все необходимые поля')
-
-    if filtered_kwargs.get('stream_count') > 1 and filtered_kwargs is None:
-        log.warning("Количество потоков больше 1, но кодек дополнительного потока не был указан. "
-                    "Будет задан основной кодек!")
 
     video = SESSION.query(Video).filter_by(**filtered_kwargs).limit(1).scalar()
     if not video:
@@ -330,9 +321,7 @@ def get_video(**kwargs) -> [Video, None]:
         extension (str): Расширение видео файла
         duration (int): Длина видеоряда
         bitrate (int): Битрейт видеоряда
-        stream_count (int): Количество потоков
-        codec_main (str): Кодек главного потока
-        codec_sub (str): Кодек второго потока
+        codec(str): Кодек потока
 
     Returns:
         Video: Модель с данными видео

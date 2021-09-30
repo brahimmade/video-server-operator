@@ -54,9 +54,7 @@ def test_set_video(preload_database):
         'extension': 'mp4',
         'duration': 10 * 60 * 60,
         'bitrate': 8340,
-        'stream_count': 2,
-        'codec_main': 'h264',
-        'codec_sub': 'h264'
+        'codec': 'h264',
     }
 
     set_video = video_server.set_or_get_new_video(**video_data)
