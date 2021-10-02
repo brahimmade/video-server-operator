@@ -50,3 +50,27 @@ def find_datestamp(path: [str, pathlib.Path],
     match_date = re.match(pattern=regexp, string=path)
 
     return datetime.strptime(path[match_date.start():match_date.end()], date_format) if match_date else match_date
+
+
+def convert_to_pathlib(path: [str, pathlib.Path], check_exist: bool = False) -> pathlib.Path:
+    """
+    Конвертация пути в pathlib.Path с проверкой существования файла
+    Args:
+        path (str | pathlib.Path): Путь для конвертации
+        check_exist (bool): Провести проверку на существование файла
+
+    Returns:
+        pathlib.Path: Pathlib путь до файла
+
+    Raises:
+        FileNotFoundError: Если файл не прошел проверку на существование
+        TypeError: Если переданный путь невозможно конвертировать в pathlib.Path
+    """
+    try:
+        converted_path = pathlib.Path(path)
+        if not converted_path.exists() and check_exist:
+            raise FileNotFoundError(f"Файла по пути {converted_path} не существует")
+
+        return converted_path
+    except TypeError as err:
+        raise TypeError(f"Путь до файла {path} некорректен") from err

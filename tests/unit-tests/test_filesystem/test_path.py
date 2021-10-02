@@ -45,3 +45,17 @@ def test_convert_to_pathlib():
 
     assert isinstance(converted_path, pathlib.Path)
     assert payload_path == converted_path.as_posix()
+
+
+def test_convert_none_path():
+    payload_path = None
+
+    with pytest.raises(TypeError):
+        path.convert_to_pathlib(payload_path)
+
+
+def test_convert_non_existent_path():
+    payload_path = 'test/convert/path'
+
+    with pytest.raises(FileNotFoundError):
+        path.convert_to_pathlib(path=payload_path, check_exist=True)
