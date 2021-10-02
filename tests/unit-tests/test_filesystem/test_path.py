@@ -1,4 +1,5 @@
 import pytest
+import pathlib
 
 from datetime import datetime
 
@@ -35,3 +36,12 @@ def test_find_datestamp():
 @pytest.mark.parametrize('invalid_path', [None, 'incorrect'])
 def test_find_incorrect_datestamp(invalid_path):
     assert path.find_datestamp(path=invalid_path) is None
+
+
+def test_convert_to_pathlib():
+    payload_path = 'test/convert/path'
+
+    converted_path = path.convert_to_pathlib(payload_path)
+
+    assert isinstance(converted_path, pathlib.Path)
+    assert payload_path == converted_path.as_posix()
