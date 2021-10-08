@@ -68,7 +68,7 @@ class VideoPath(BASE):
     record_date = schema.Column(sqltypes.Date, nullable=False)
 
     def __repr__(self):
-        return f"{self.id} | video: {self.video_id} for cam: {self.camera_id} at {self.record_date}"
+        return f"{self.id} | video_path: {self.video_path} for cam: {self.camera_id} at {self.record_date}"
 
     def __lt__(self, other):
         return self.id <= other.id
@@ -354,7 +354,7 @@ def get_video_pool_by_datetime(time_start: datetime, time_end: datetime) -> list
                 Video.time <= time_end.time()).all()
         } for video_path in video_path_list
     ]
-
+    breakpoint()
     return video_pool
 
 
