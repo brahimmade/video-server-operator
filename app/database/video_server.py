@@ -1,5 +1,6 @@
 from datetime import datetime
 from functools import total_ordering
+from typing import List
 
 from pathlib import Path
 from sqlalchemy.sql import sqltypes, schema
@@ -332,6 +333,22 @@ def get_video(**kwargs) -> [Video, None]:
     video = SESSION.query(Video).filter_by(**filtered_fields).limit(1).scalar()
     SESSION.close()
     return video
+
+
+def get_video_pool_by_time(time_start: datetime, time_end: datetime, video_path: VideoPath) -> List[Video]:
+    """
+    Получить пул видео по заданному временному отрезку
+    Args:
+        time_start (datetime): Начальное время видео
+        time_end (datetime): Конечное время видео
+        video_path (VideoPath): Модель пути до видео
+
+    Returns:
+        List of Video: Список моделей Video по заданному временному отрезку
+    """
+    video_pool = SESSION.query(Video).filter_by(video_path_id=video_path.id).filter(Video.time >= time_start.time(),
+                                                                                    Video.time <= time_end.time())
+    return video_pool.all()
 
 
 if __name__ != '__main__':

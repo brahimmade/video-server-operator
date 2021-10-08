@@ -90,3 +90,43 @@ def test_get_camera(preload_database):
     get_camera = video_server.get_camera(camera_dir=camera_dir)
 
     assert set_camera == get_camera
+
+
+def test_video_pool_by_date(preload_database):
+    set_video_server = video_server.set_or_get_new_server('/dev/archive/test_server')
+    set_cam = video_server.set_or_get_new_camera(camera_dir='cam1', server=set_video_server)
+    set_video_path = video_server.set_or_get_new_video_path(camera=set_cam,
+                                                            video_path="03-06-2020/62241721",
+                                                            datestamp=datetime.strptime('03-06-2020', "%d-%m-%Y"))
+    time_start = datetime.strptime('10:20:30', '%H:%M:%S')
+    time_end = datetime.strptime('10:20:40', '%H:%M:%S')
+    default_video_payload = {
+        'name': "test_video",
+        'video_path_id': set_video_path.id,
+        'time': time_start,
+        'extension': 'mp4',
+        'duration': 10 * 60 * 60,
+        'bitrate': 8340,
+        'codec': 'h264',
+    }
+    set_video_start = video_server.set_or_get_new_video(**default_video_payload)
+    default_video_payload['time'] = time_end
+    set_video_end = video_server.set_or_get_new_video(**default_video_payload)
+
+    get_video_pool = video_server.get_video_pool_by_time(time_start=time_start, time_end=time_end,
+                                                         video_path=set_video_path)
+
+    assert [set_video_start, set_video_end] == get_video_pool
+
+
+def test_video_pool_by_incorrect_date(preload_database):
+    set_video_server = video_server.set_or_get_new_server('/dev/archive/test_server')
+    set_cam = video_server.set_or_get_new_camera(camera_dir='cam1', server=set_video_server)
+    set_video_path = video_server.set_or_get_new_video_path(camera=set_cam,
+                                                            video_path="03-06-2020/62241721",
+                                                            datestamp=datetime.strptime('03-06-2020', "%d-%m-%Y"))
+
+    empty_video_list = video_server.get_video_pool_by_time(time_start=datetime.now(),
+                                                           time_end=datetime.now(),
+                                                           video_path=set_video_path)
+    assert not empty_video_list
