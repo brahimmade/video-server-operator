@@ -1,6 +1,5 @@
 from datetime import datetime
 from functools import total_ordering
-from typing import List
 
 from pathlib import Path
 from sqlalchemy.sql import sqltypes, schema
@@ -335,20 +334,28 @@ def get_video(**kwargs) -> [Video, None]:
     return video
 
 
-def get_video_pool_by_time(time_start: datetime, time_end: datetime, video_path: VideoPath) -> List[Video]:
+def get_video_pool_by_datetime(time_start: datetime, time_end: datetime) -> list[dict]:
     """
     Получить пул видео по заданному временному отрезку
     Args:
         time_start (datetime): Начальное время видео
         time_end (datetime): Конечное время видео
-        video_path (VideoPath): Модель пути до видео
 
     Returns:
-        List of Video: Список моделей Video по заданному временному отрезку
+        list[dict]: Список моделей Video по заданному временному отрезку
     """
-    video_pool = SESSION.query(Video).filter_by(video_path_id=video_path.id).filter(Video.time >= time_start.time(),
-                                                                                    Video.time <= time_end.time())
-    return video_pool.all()
+    video_path_list = SESSION.query(VideoPath).filter(VideoPath.record_date >= time_start.date(),
+                                                      VideoPath.record_date <= time_end.date()).all()
+    video_pool = [
+        {
+            'video_path': video_path,
+            'videos': SESSION.query(Video).filter_by(video_path_id=video_path.id).filter(
+                Video.time >= time_start.time(),
+                Video.time <= time_end.time()).all()
+        } for video_path in video_path_list
+    ]
+
+    return video_pool
 
 
 if __name__ != '__main__':
