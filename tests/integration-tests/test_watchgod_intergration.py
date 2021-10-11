@@ -43,7 +43,6 @@ def test_create_new_video(get_watchdog):
         try:
             assert video_server.get_server(server_dir=Path(WATCHDOG_TESTS_DIR, 'test_server')) is not None
             assert video_server.get_camera(camera_dir=Path('cam-02')) is not None
-            assert video_server.get_video_path(video_path=Path('2021-07-21', '6580114')) is not None
             assert video_server.get_video(name='test_wd_video') is not None
             break
         except AssertionError as err:

@@ -24,10 +24,9 @@ def set_full_path(video_path: [str, pathlib.Path]) -> None:
         set_server = video_server.set_or_get_new_server(server_dir=parsed_path.get('server'))
         set_camera = video_server.set_or_get_new_camera(camera_dir=parsed_path.get('camera'),
                                                         server=set_server)
-        set_video_path = video_server.set_or_get_new_video_path(camera=set_camera,
-                                                                video_path=parsed_path.get('video_path'),
-                                                                datestamp=video_datestamp)
         video_server.set_or_get_new_video(**parser.get_video_data(video_path=video_path),
-                                          video_path_id=set_video_path.id)
+                                          camera_id=set_camera.id,
+                                          video_path=parsed_path.get('video_path'),
+                                          record_date=video_datestamp)
     except ValueError as err:
         raise err

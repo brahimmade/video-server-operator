@@ -2,6 +2,7 @@ from datetime import datetime
 from functools import total_ordering
 
 from pathlib import Path
+from sqlalchemy import asc
 from sqlalchemy.sql import sqltypes, schema
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -19,17 +20,21 @@ class Video(BASE):
     __tablename__ = 'video'
     id = schema.Column(sqltypes.Integer, primary_key=True)
     name = schema.Column(sqltypes.String(256), nullable=False)
-    video_path_id = schema.Column(sqltypes.Integer,
-                                  schema.ForeignKey('video_path.id', ondelete='CASCADE', onupdate='CASCADE'),
-                                  nullable=False)
-    time = schema.Column(sqltypes.Time(timezone=True), nullable=False)
+    camera_id = schema.Column(sqltypes.Integer,
+                              schema.ForeignKey('camera.id', ondelete='CASCADE', onupdate='CASCADE'),
+                              nullable=False)
+    video_path = schema.Column(sqltypes.String(256), nullable=False)
+    record_date = schema.Column(sqltypes.Date, nullable=False)
+    record_time = schema.Column(sqltypes.Time(timezone=True), nullable=False)
     extension = schema.Column(sqltypes.String(6), nullable=False)
     duration = schema.Column(sqltypes.Integer, nullable=False)
     bitrate = schema.Column(sqltypes.Integer, nullable=False)
     codec = schema.Column(sqltypes.String(10), nullable=False)
 
     def __repr__(self):
-        return f"{self.id} | {self.name}.{self.extension} at {self.time} duration: {self.duration}"
+        return f"<{self.id} | {self.name}.{self.extension} " \
+               f"at {self.record_date} {self.record_time} " \
+               f"duration: {self.duration}>"
 
     def __lt__(self, other):
         return self.id <= other.id
@@ -57,27 +62,6 @@ class VideoServer(BASE):
 
 
 @total_ordering
-class VideoPath(BASE):
-    """ Модель таблицы с путями до директорий с видео"""
-    __tablename__ = 'video_path'
-    id = schema.Column(sqltypes.Integer, primary_key=True)
-    camera_id = schema.Column(sqltypes.Integer,
-                              schema.ForeignKey('camera.id', ondelete='CASCADE', onupdate='CASCADE'),
-                              nullable=False)
-    video_path = schema.Column(sqltypes.String(256), nullable=False)
-    record_date = schema.Column(sqltypes.Date, nullable=False)
-
-    def __repr__(self):
-        return f"{self.id} | video_path: {self.video_path} for cam: {self.camera_id} at {self.record_date}"
-
-    def __lt__(self, other):
-        return self.id <= other.id
-
-    def __eq__(self, other):
-        return isinstance(other, VideoPath) and self.id == other.id
-
-
-@total_ordering
 class Camera(BASE):
     """Модель таблицы Камеры"""
     __tablename__ = 'camera'
@@ -102,7 +86,6 @@ def init_tables():
     """Инициализация таблиц в базе данных"""
     VideoServer.__table__.create(checkfirst=True)
     Camera.__table__.create(checkfirst=True)
-    VideoPath.__table__.create(checkfirst=True)
     Video.__table__.create(checkfirst=True)
 
 
@@ -171,8 +154,10 @@ def set_or_get_new_video(**kwargs) -> Video:
         **kwargs: Аргументы с данными о видео
     Keyword Args:
         name (str): Название видео
-        video_path_id (id): ID записи video_path для этой камеры
-        time (str): Временая метка, с которого идет запись
+        camera_id (int): ID записи камеры
+        video_path (str | Path): Путь до видео
+        record_date (datetime): Дата, когда было записано видео
+        record_time (datetime): Время, с которого идет запись
         extension (str): Расширение видео файла
         duration (int): Длина видеоряда
         bitrate (int): Битрейт видеоряда
@@ -186,49 +171,22 @@ def set_or_get_new_video(**kwargs) -> Video:
     # Удаляем неуказанные kwargs
     required_fields = Video.__table__.columns.keys()
     filtered_kwargs = leave_required_keys(kwargs, required_fields)
-    required_fields.remove('id')  # Убираем поле id из требуемых, так как оно авто-инкриминирующее
+    required_fields.remove('id')  # Убираем поле id из требуемых, так как оно не обязательно
     # Проверка того, что все необходимые поля переданы
     if set(required_fields) - set(filtered_kwargs):
         raise KeyError('Не были переданы все необходимые поля')
 
     video = SESSION.query(Video).filter_by(**filtered_kwargs).limit(1).scalar()
     if not video:
+        if 'id' in filtered_kwargs:
+            filtered_kwargs.pop('id')
+
         video = Video(**filtered_kwargs)
         SESSION.add(video)
         SESSION.commit()
 
     SESSION.close()
     return video
-
-
-@with_insertion_lock
-def set_or_get_new_video_path(camera: Camera, video_path: [str, Path], datestamp: datetime) -> Camera:
-    """
-    Добавляет новую камеру в базу данных
-    Args:
-        camera (Camera): Модель таблицы Камеры, для которой указывается путь до видео
-        video_path (str | Path): Путь до видео
-        datestamp (datetime): Дата, когда было записано видео
-
-    Returns:
-        Camera: Модель с данными камеры
-    """
-    set_video_path = SESSION.query(VideoPath).filter_by(
-        camera_id=camera.id,
-        video_path=video_path,
-        record_date=datestamp).limit(1).scalar()
-
-    if not set_video_path:
-        set_video_path = VideoPath(
-            camera_id=camera.id,
-            video_path=video_path,
-            record_date=datestamp
-        )
-        SESSION.add(set_video_path)
-        SESSION.commit()
-
-    SESSION.close()
-    return set_video_path
 
 
 def get_server(**kwargs) -> [VideoServer, None]:
@@ -282,32 +240,6 @@ def get_camera(**kwargs) -> [Camera, None]:
     return camera
 
 
-def get_video_path(**kwargs) -> [VideoPath, None]:
-    """
-    Получить модель пути до видео по заданным параметрам
-    Args:
-        **kwargs: Данные модели пути видео
-
-    Keyword Args:
-        id (int): ID записи в таблице
-        camera_id (int): ID камеры, к которой привязан путь
-        video_path (str | Path): Путь до видео
-        record_date (str | datetime): Дата записи видео
-
-    Returns:
-        VideoPath: Модель с данными пути до видео
-        None: Если по переданным параметрам не было найдено пути до видео
-    """
-    filtered_fields = leave_required_keys(kwargs, VideoPath.__table__.columns.keys())
-
-    if 'video_path' in filtered_fields.keys():
-        filtered_fields['video_path'] = str(filtered_fields.get('video_path')).replace("\\", '/')
-
-    video_path = SESSION.query(VideoPath).filter_by(**filtered_fields).limit(1).scalar()
-    SESSION.close()
-    return video_path
-
-
 def get_video(**kwargs) -> [Video, None]:
     """
     Получить модель видео по заданным параметрам
@@ -316,12 +248,14 @@ def get_video(**kwargs) -> [Video, None]:
     Keyword Args:
         id (int): ID записи в таблице
         name (str): Название видео
-        video_path_id (id): ID записи video_path для этой камеры
-        time (str): Временая метка, с которого идет запись
+        camera_id (int): ID записи камеры
+        video_path (str | Path): Путь до видео
+        record_date (datetime): Дата, когда было записано видео
+        record_time (datetime): Время, с которого идет запись
         extension (str): Расширение видео файла
         duration (int): Длина видеоряда
         bitrate (int): Битрейт видеоряда
-        codec(str): Кодек потока
+        codec (str): Кодек потока
 
     Returns:
         Video: Модель с данными видео
@@ -344,18 +278,12 @@ def get_video_pool_by_datetime(time_start: datetime, time_end: datetime) -> list
     Returns:
         list[dict]: Список моделей Video по заданному временному отрезку
     """
-    video_path_list = SESSION.query(VideoPath).filter(VideoPath.record_date >= time_start.date(),
-                                                      VideoPath.record_date <= time_end.date()).all()
-    video_pool = [
-        {
-            'video_path': video_path,
-            'videos': SESSION.query(Video).filter_by(video_path_id=video_path.id).filter(
-                Video.time >= time_start.time(),
-                Video.time <= time_end.time()).all()
-        } for video_path in video_path_list
-    ]
-    breakpoint()
-    return video_pool
+    video_pool = SESSION.query(Video).filter(Video.record_date >= time_start.date(),
+                                             Video.record_date <= time_end.date(),
+                                             Video.record_time >= time_start.time(),
+                                             Video.record_time <= time_end.time())
+
+    return video_pool.order_by(asc(Video.record_date)).order_by(asc(Video.record_time)).all()
 
 
 if __name__ != '__main__':
