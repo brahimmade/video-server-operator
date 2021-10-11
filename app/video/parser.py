@@ -37,7 +37,7 @@ def get_video_data(video_path: [str, Path]) -> VideoData:
     video_file_data = {
         'name': video_path.stem,
         'extension': video_path.suffix,
-        'time': file.modification_date(video_path)
+        'record_time': file.modification_date(video_path)
     }
     video_data = VideoData(
         **video_file_data,

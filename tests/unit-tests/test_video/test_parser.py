@@ -14,7 +14,7 @@ def test_get_video_data():
     reference_value = {
         'name': 'test_video',
         'extension': '.mp4',
-        'time': datetime(2021, 10, 1, 16, 49, 8, 39728),
+        'record_time': datetime(2021, 10, 1, 16, 49, 8, 39728),
         'bitrate': '346368',
         'codec': 'h264',
         'duration': 0.5,
