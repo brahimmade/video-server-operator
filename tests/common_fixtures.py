@@ -14,7 +14,7 @@ def async_loop():
     return asyncio.get_event_loop()
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="session", autouse=True)
 def preload_database():
     """Предзагрузка базы данных, очистка, инициализация таблиц"""
     BASE.metadata.drop_all()
