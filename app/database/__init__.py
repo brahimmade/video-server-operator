@@ -11,7 +11,7 @@ def create_session() -> scoped_session:
     Returns:
         scoped_session: Хранилище сессий
     """
-    engine = create_engine(MYSQL_URL)
+    engine = create_engine(MYSQL_URL, pool_pre_ping=True)
 
     if not database_exists(engine.url):
         create_database(engine.url)

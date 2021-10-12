@@ -268,7 +268,7 @@ def get_video(**kwargs) -> [Video, None]:
     return video
 
 
-def get_video_pool_by_datetime(time_start: datetime, time_end: datetime) -> list[dict]:
+def get_video_pool_by_datetime(time_start: datetime, time_end: datetime) -> list[Video]:
     """
     Получить пул видео по заданному временному отрезку
     Args:
@@ -276,14 +276,20 @@ def get_video_pool_by_datetime(time_start: datetime, time_end: datetime) -> list
         time_end (datetime): Конечное время видео
 
     Returns:
-        list[dict]: Список моделей Video по заданному временному отрезку
+        list[Video]: Список моделей Video по заданному временному отрезку
     """
-    video_pool = SESSION.query(Video).filter(Video.record_date >= time_start.date(),
-                                             Video.record_date <= time_end.date(),
-                                             Video.record_time >= time_start.time(),
-                                             Video.record_time <= time_end.time())
+    video_pool = SESSION \
+        .query(Video) \
+        .filter(Video.record_date >= time_start.date(),
+                Video.record_date <= time_end.date(),
+                Video.record_time >= time_start.time(),
+                Video.record_time <= time_end.time())\
+        .order_by(asc(Video.record_date))\
+        .order_by(asc(Video.record_time))\
+        .all()
 
-    return video_pool.order_by(asc(Video.record_date)).order_by(asc(Video.record_time)).all()
+    SESSION.close()
+    return video_pool
 
 
 if __name__ != '__main__':
