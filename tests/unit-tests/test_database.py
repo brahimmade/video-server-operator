@@ -99,11 +99,14 @@ def test_video_pool_by_date():
     default_video_payload['record_time'] = time_end
     set_video_end = video_server.set_or_get_new_video(**default_video_payload)
 
-    get_video_pool = video_server.get_video_pool_by_datetime(time_start=time_start, time_end=time_end)
+    get_video_pool = video_server.get_video_pool_by_datetime(time_start=time_start, time_end=time_end, camera=set_cam)
 
     assert get_video_pool == [set_video_start, set_video_end]
 
 
 def test_video_pool_by_incorrect_date():
-    empty_video_list = video_server.get_video_pool_by_datetime(time_start=datetime.max, time_end=datetime.max)
+    get_camera = video_server.get_camera(id=1)
+    empty_video_list = video_server.get_video_pool_by_datetime(time_start=datetime.max,
+                                                               time_end=datetime.max,
+                                                               camera=get_camera)
     assert not empty_video_list

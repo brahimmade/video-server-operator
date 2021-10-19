@@ -1,7 +1,6 @@
 from datetime import datetime
 from functools import total_ordering
 
-from pathlib import Path
 from sqlalchemy import asc
 from sqlalchemy.sql import sqltypes, schema
 from sqlalchemy.exc import SQLAlchemyError
@@ -155,7 +154,7 @@ def set_or_get_new_video(**kwargs) -> Video:
     Keyword Args:
         name (str): Название видео
         camera_id (int): ID записи камеры
-        video_path (str | Path): Путь до видео
+        video_path (str | pathlib.Path): Путь до видео
         record_date (datetime): Дата, когда было записано видео
         record_time (datetime): Время, с которого идет запись
         extension (str): Расширение видео файла
@@ -198,7 +197,7 @@ def get_server(**kwargs) -> [VideoServer, None]:
     Keyword Args:
         id (int): ID записи в таблице
         server_name (str): Название сервера
-        server_dir (str | Path): Путь до сервера
+        server_dir (str | pathlib.Path): Путь до сервера
 
     Returns:
         VideoServer: Модель с данными о сервере
@@ -224,7 +223,7 @@ def get_camera(**kwargs) -> [Camera, None]:
         id (int): ID записи в таблице
         server_id (int): ID сервера, к которому привязанна камера
         camera_name (str): Название камеры
-        camera_dir (str | Path): Путь до камеры
+        camera_dir (str | pathlib.Path): Путь до камеры
 
     Returns:
         Camera: Модель с данными о камере
@@ -249,7 +248,7 @@ def get_video(**kwargs) -> [Video, None]:
         id (int): ID записи в таблице
         name (str): Название видео
         camera_id (int): ID записи камеры
-        video_path (str | Path): Путь до видео
+        video_path (str | pathlib.Path): Путь до видео
         record_date (datetime): Дата, когда было записано видео
         record_time (datetime): Время, с которого идет запись
         extension (str): Расширение видео файла
@@ -268,18 +267,20 @@ def get_video(**kwargs) -> [Video, None]:
     return video
 
 
-def get_video_pool_by_datetime(time_start: datetime, time_end: datetime) -> list[Video]:
+def get_video_pool_by_datetime(time_start: datetime, time_end: datetime, camera: Camera) -> list[Video]:
     """
     Получить пул видео по заданному временному отрезку
     Args:
         time_start (datetime): Начальное время видео
         time_end (datetime): Конечное время видео
+        camera (Camera): Модель камеры, которая производила запись
 
     Returns:
         list[Video]: Список моделей Video по заданному временному отрезку
     """
     video_pool = SESSION \
         .query(Video) \
+        .filter_by(camera_id=camera.id) \
         .filter(Video.record_date >= time_start.date(),
                 Video.record_date <= time_end.date(),
                 Video.record_time >= time_start.time(),
