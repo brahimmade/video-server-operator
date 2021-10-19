@@ -1,0 +1,4 @@
+MOCK_VIDEO_EXTENSION = "mp4"
+MOCK_VIDEO_CODEC = "h264"
+MOCK_VIDEO_NAME = "mock_video"
+MOCK_VIDEO_PATH = "mock_video_path"
