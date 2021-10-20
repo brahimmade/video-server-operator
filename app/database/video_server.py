@@ -154,7 +154,7 @@ def set_or_get_new_video(**kwargs) -> Video:
     Keyword Args:
         name (str): Название видео
         camera_id (int): ID записи камеры
-        video_path (str | pathlib.Path): Путь до видео
+        video_path (PathLike): Путь до видео
         record_date (datetime): Дата, когда было записано видео
         record_time (datetime): Время, с которого идет запись
         extension (str): Расширение видео файла
@@ -197,7 +197,7 @@ def get_server(**kwargs) -> [VideoServer, None]:
     Keyword Args:
         id (int): ID записи в таблице
         server_name (str): Название сервера
-        server_dir (str | pathlib.Path): Путь до сервера
+        server_dir (PathLike): Путь до сервера
 
     Returns:
         VideoServer: Модель с данными о сервере
@@ -223,7 +223,7 @@ def get_camera(**kwargs) -> [Camera, None]:
         id (int): ID записи в таблице
         server_id (int): ID сервера, к которому привязанна камера
         camera_name (str): Название камеры
-        camera_dir (str | pathlib.Path): Путь до камеры
+        camera_dir (PathLike): Путь до камеры
 
     Returns:
         Camera: Модель с данными о камере
@@ -248,7 +248,7 @@ def get_video(**kwargs) -> [Video, None]:
         id (int): ID записи в таблице
         name (str): Название видео
         camera_id (int): ID записи камеры
-        video_path (str | pathlib.Path): Путь до видео
+        video_path (PathLike): Путь до видео
         record_date (datetime): Дата, когда было записано видео
         record_time (datetime): Время, с которого идет запись
         extension (str): Расширение видео файла

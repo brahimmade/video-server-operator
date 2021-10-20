@@ -1,15 +1,15 @@
-import pathlib
+from os import PathLike
 
 from app.database import video_server
 from app.filesystem import path
 from app.video import parser
 
 
-def set_full_path(video_path: [str, pathlib.Path]) -> None:
+def set_full_path(video_path: PathLike) -> None:
     """
     Отправить все данные пути в базу данных
     Args:
-        video_path (str | pathlib.Path): Путь до видео
+        video_path (PathLike): Путь до видео
     Raises:
         ValueError: Ошибка возникает, если переданный путь оказался некорректным
     """

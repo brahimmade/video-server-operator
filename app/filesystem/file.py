@@ -2,14 +2,13 @@ import os
 import platform
 
 from datetime import datetime
-from pathlib import Path
 
 
-def modification_date(path_to_file: [str, Path]) -> datetime:
+def modification_date(path_to_file: os.PathLike) -> datetime:
     """
     Получить точное время изменения файла
     Args:
-        path_to_file (str | Path): Путь до файла, для которого необходимо найти время изменения
+        path_to_file (os.PathLike): Путь до файла, для которого необходимо найти время изменения
 
     Returns:
         datetime: Полное время изменения

@@ -1,7 +1,6 @@
 from datetime import datetime
 from typing import TypedDict
-
-from pathlib import Path
+from os import PathLike
 
 from app.filesystem import file, path
 from .ffmpeg import ffprobe
@@ -17,11 +16,11 @@ class VideoData(TypedDict):
     codec: str
 
 
-def get_video_data(video_path: [str, Path]) -> VideoData:
+def get_video_data(video_path: PathLike) -> VideoData:
     """
     Получить данные о переданном видео-файле
     Args:
-        video_path (str | Path): Путь до необходимого видео-файла
+        video_path (PathLike): Путь до необходимого видео-файла
 
     Returns:
         VideoData: Словарь данных о видео

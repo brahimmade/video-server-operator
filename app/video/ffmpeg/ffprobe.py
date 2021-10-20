@@ -1,17 +1,16 @@
 import subprocess
 
 from ast import literal_eval
-
-from pathlib import Path
+from os import PathLike
 
 from app.filesystem import path
 
 
-def get_video_metadata(video_path: [str, Path]) -> dict:
+def get_video_metadata(video_path: PathLike) -> dict:
     """
     Получить метаданные видео посредством ffprobe
     Args:
-        video_path (str | Path): Путь до видео, из которого необходимо извлечь метаданные
+        video_path (PathLike): Путь до видео, из которого необходимо извлечь метаданные
 
     Returns:
         dict: Словарь метаданных видео
