@@ -13,7 +13,7 @@ def test_get_video_data():
     video_path = Path(TEST_DIR_PATH, 'files_for_test', 'test_video.mp4')
     reference_value = {
         'name': 'test_video',
-        'extension': '.mp4',
+        'extension': 'mp4',
         'record_time': datetime(2021, 10, 1, 16, 49, 8, 39728),
         'bitrate': '346368',
         'codec': 'h264',
