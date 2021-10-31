@@ -14,6 +14,10 @@ def get_video_metadata(video_path: PathLike) -> dict:
 
     Returns:
         dict: Словарь метаданных видео
+
+    Raises:
+        FileNotFoundError, TypeError: Поднимается, если по передеанному пути не был найден файл
+        subprocess.CalledProcessError: Если во время процесса поиска метаданных произошла ошибка
     """
 
     try:
@@ -26,16 +30,12 @@ def get_video_metadata(video_path: PathLike) -> dict:
         video_path,
         "-loglevel", "quiet",
         "-print_format", "json",
-        "-show_format",
-        "-show_streams"
+        "-select_streams", "v:0",
+        "-show_entries", "stream=duration,bit_rate,codec_name"
     ]
 
     try:
-        result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True, check=True)
-
-        if result.stderr:
-            raise OSError(result.stderr)
-
-        return literal_eval(result.stdout.decode())
-    except (OSError, IOError) as err:
+        result = subprocess.check_output(command)
+        return literal_eval(result.decode())
+    except subprocess.CalledProcessError as err:
         raise err
