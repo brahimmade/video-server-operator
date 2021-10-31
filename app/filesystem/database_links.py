@@ -16,17 +16,14 @@ def set_full_path(video_path: PathLike) -> None:
     try:
         parsed_path = path.split_path(video_path)
 
-        video_datestamp = path.find_datestamp(parsed_path.get('video_path'))
-        # Проверка, если поиск даты вернул None
-        if video_datestamp is None:
-            raise ValueError("В переданном пути video_path не была найдена дата")
-
         set_server = video_server.set_or_get_new_server(server_dir=parsed_path.get('server'))
         set_camera = video_server.set_or_get_new_camera(camera_dir=parsed_path.get('camera'),
                                                         server=set_server)
-        video_server.set_or_get_new_video(**parser.get_video_data(video_path=video_path),
-                                          camera_id=set_camera.id,
-                                          video_path=parsed_path.get('video_path'),
-                                          record_date=video_datestamp)
+
+        if video_server.get_video(video_path=parsed_path.get("video_path"), camera_id=set_camera.id) is None:
+            video_server.set_or_get_new_video(**parser.get_video_data(video_path=video_path),
+                                              camera_id=set_camera.id,
+                                              video_path=parsed_path.get('video_path'),
+                                              record_date=parsed_path.get('video_date'))
     except ValueError as err:
         raise err
