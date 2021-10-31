@@ -131,7 +131,7 @@ def set_or_get_new_camera(camera_dir: str, server: VideoServer) -> Camera:
     Returns:
         Camera: Модель с данными камеры
     """
-    camera = SESSION.query(Camera).filter_by(camera_dir=camera_dir).limit(1).scalar()
+    camera = SESSION.query(Camera).filter_by(camera_dir=camera_dir, server_id=server.id).limit(1).scalar()
     if not camera:
         camera = Camera(
             server_id=server.id,
@@ -284,13 +284,58 @@ def get_video_pool_by_datetime(time_start: datetime, time_end: datetime, camera:
         .filter(Video.record_date >= time_start.date(),
                 Video.record_date <= time_end.date(),
                 Video.record_time >= time_start.time(),
-                Video.record_time <= time_end.time())\
-        .order_by(asc(Video.record_date))\
-        .order_by(asc(Video.record_time))\
+                Video.record_time <= time_end.time()) \
+        .order_by(asc(Video.record_date)) \
+        .order_by(asc(Video.record_time)) \
         .all()
 
     SESSION.close()
     return video_pool
+
+
+def get_all_video_servers() -> list[VideoServer]:
+    """
+    Получить список всех видео-серверов
+
+    Returns:
+        list[VideoServer]: Список всех видео-серверов в базе данных
+    """
+    video_servers = SESSION.query(VideoServer).all()
+    SESSION.close()
+
+    return video_servers
+
+
+def get_all_cameras_at_server(server: VideoServer) -> list[Camera]:
+    """
+    Получить список камер, относяшихся к указанному серверу
+
+    Args:
+        server (VideoServer): Видео-сервер, которому отностся камеры
+
+    Returns:
+        list[Camera]: Список всех камер переданного сервера
+    """
+    cameras = SESSION.query(Camera).filter_by(server_id=server.id).all()
+    SESSION.close()
+
+    return cameras
+
+
+def get_all_videos_from_camera(camera: Camera) -> list[Video]:
+    """
+    Получить список видео, которые были записаны переданной камерой
+    Args:
+        camera (Camera): Модель камеры, с которой необходимо получить список видео
+
+    Returns:
+        list[Video]: Список видео, которые были записаны переданной камерой
+    """
+
+    videos = SESSION.query(Video).filter_by(camera_id=camera.id).all()
+    SESSION.close()
+
+    return videos
 
 
 if __name__ != '__main__':

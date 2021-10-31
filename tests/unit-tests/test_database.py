@@ -110,3 +110,41 @@ def test_video_pool_by_incorrect_date(set_testing_camera):
                                                                time_end=datetime.max,
                                                                camera=set_camera)
     assert not empty_video_list
+
+
+def test_get_all_servers(set_testing_server):
+    set_video_server = set_testing_server()
+
+    get_all_video_servers = video_server.get_all_video_servers()
+
+    assert set_video_server in get_all_video_servers
+
+
+def test_get_all_cameras(set_testing_server, set_testing_camera):
+    set_video_server = set_testing_server()
+    set_camera = set_testing_camera(server=set_video_server)
+
+    get_all_cameras = video_server.get_all_cameras_at_server(server=set_video_server)
+
+    assert set_camera in get_all_cameras
+
+
+def test_get_all_cameras_from_non_existent_server():
+    get_camera = video_server.get_all_cameras_at_server(server=video_server.VideoServer())
+
+    assert not len(get_camera)
+
+
+def test_get_all_video_from_camera(set_testing_camera, set_testing_video):
+    set_camera = set_testing_camera()
+    set_video = set_testing_video()
+
+    get_all_video = video_server.get_all_videos_from_camera(camera=set_camera)
+
+    assert set_video in get_all_video
+
+
+def test_get_all_video_from_non_existent_camera():
+    get_video = video_server.get_all_videos_from_camera(camera=video_server.Camera())
+
+    assert not len(get_video)
