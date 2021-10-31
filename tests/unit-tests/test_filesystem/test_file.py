@@ -7,7 +7,7 @@ from datetime import datetime
 from app.filesystem import file
 
 
-TEST_DIR_PATH = [path_ for path_ in sys.path if path_.endswith('test_filesystem')][0]
+TEST_DIR_PATH = pathlib.Path(__file__).parent
 
 
 def test_get_modification_date():
