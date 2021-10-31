@@ -2,14 +2,15 @@ import pathlib
 import re
 
 from datetime import datetime
+from typing import AnyStr
 from os import PathLike
 
 
-def split_path(path: PathLike, regexp: str = None) -> dict:
+def split_path(path: [PathLike, AnyStr], regexp: str = None) -> dict:
     """
     Разделяет строку на директории для базы данныъх
     Args:
-        path (PathLike): Путь для разделения
+        path (PathLike, AnyStr): Путь для разделения
         regexp (str): Кастомное регулярное выражение для поиска путей
 
     Returns:
@@ -19,28 +20,28 @@ def split_path(path: PathLike, regexp: str = None) -> dict:
         ValueError: Вернет ошибку, если путь не соответсвует регулярному выражению
     """
     path = str(path).replace('\\', '/')  # Приведение к типу и нормальному формату пути
-    regexp = r'(\/?.+)\/(\w+\-\d+)\/(\d{4}\-\d{2}\-\d{2}\/.+)\/(.+\.mp4|avi)$' if regexp is None else regexp
+    regexp = r'(\/?.+)\/(\w+\-\d+)\/(\d{4}\-\d{2}\-\d{2})\/(.+\.mp4|avi)$' if regexp is None else regexp
 
     try:
         split_path_dict = re.findall(regexp, path)[0]
         return {
             'server': split_path_dict[0],
             'camera': split_path_dict[1],
-            'video_path': split_path_dict[2],
-            'video': split_path_dict[3]
+            'video_date': split_path_dict[2],
+            'video_path': split_path_dict[3]
         }
 
     except IndexError:
         raise ValueError(f"Путь {path} - не соотвествует регулярному выражению") from ValueError
 
 
-def find_datestamp(path: PathLike,
+def find_datestamp(path: [PathLike, AnyStr],
                    regexp: str = r'(\d{4}\-\d{2}\-\d{2})',
                    date_format: str = "%Y-%m-%d") -> [datetime, None]:
     """
     Ищет отметку даты записи видео в переданном пути
     Args:
-        path (PathLike): Путь, который содержит дату
+        path (PathLike, AnyStr): Путь, который содержит дату
         regexp (str): Регулярное выражение, по которому необходимо искать дату
         date_format (str): Формат даты для datetime
     Returns:
@@ -53,11 +54,11 @@ def find_datestamp(path: PathLike,
     return datetime.strptime(path[match_date.start():match_date.end()], date_format) if match_date else match_date
 
 
-def convert_to_pathlib(path: PathLike, check_exist: bool = False) -> pathlib.Path:
+def convert_to_pathlib(path: [PathLike, AnyStr], check_exist: bool = False) -> pathlib.Path:
     """
     Конвертация пути в pathlib.Path с проверкой существования файла
     Args:
-        path (PathLike): Путь для конвертации
+        path (PathLike, AnyStr): Путь для конвертации
         check_exist (bool): Провести проверку на существование файла
 
     Returns:
@@ -75,4 +76,3 @@ def convert_to_pathlib(path: PathLike, check_exist: bool = False) -> pathlib.Pat
         return converted_path
     except TypeError as err:
         raise TypeError(f"Путь до файла {path} некорректен") from err
-    

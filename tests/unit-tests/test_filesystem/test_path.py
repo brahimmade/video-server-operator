@@ -7,15 +7,15 @@ from app.filesystem import path
 
 
 def test_split_path():
-    payload_path = '/mnt/archive/test_server/cam-11/2021-08-02/6580713/6580713-video.mp4'
+    payload_path = pathlib.Path('/mnt/archive/test_server/cam-11/2021-08-02/6580713/6580713-video.mp4')
 
     split_path = path.split_path(path=payload_path)
 
     assert split_path == {
         'server': '/mnt/archive/test_server',
         'camera': 'cam-11',
-        'video_path': '2021-08-02/6580713',
-        'video': '6580713-video.mp4'
+        'video_date': '2021-08-02',
+        'video_path': '6580713/6580713-video.mp4'
     }
 
 
